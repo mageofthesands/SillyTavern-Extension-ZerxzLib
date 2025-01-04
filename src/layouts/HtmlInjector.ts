@@ -3,7 +3,7 @@ import { ref, createRef } from 'lit/directives/ref.js';
 import { SignalWatcher, signal, watch } from '@lit-labs/signals';
 import { type StyleInfo, styleMap } from 'lit/directives/style-map.js';
 import { useExtensionSetting } from '../utils/extension';
-const { saveSettingsDebounced, extensionSettings, setSetting } = useExtensionSetting("HtmlInjector");
+const { saveSettingsDebounced, extensionSettings, setSetting, getSettings, setSettings } = useExtensionSetting("HtmlInjector");
 // This function is called when the extension settings are changed in the UI
 function onExampleInput() {
     extensionSettings.example_setting = "测试";
@@ -465,21 +465,21 @@ class SettingsPanel extends SignalWatcher(LitElement) {
         const target = event.target as HTMLSelectElement;
         const value = target.value;
         activationMode.set(value);
-        localStorage.setItem('activationMode', value);
+        setSetting('activationMode', value);
         this.updateInjection();
     }
     handleSavePositionChange(event: Event) {
         const target = event.target as HTMLSelectElement;
         const value = target.value;
         savedPosition.set(value);
-        localStorage.setItem('edgeControlsPosition', value);
+        setSetting('edgeControlsPosition', value);
         this.edgeControls.updateEdgeControlsPosition(value);
     }
     handleCustomStartFloorChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
         customStartFloor.set(value);
-        localStorage.setItem('customStartFloor', value.toString());
+        setSetting('customStartFloor', value);
         this.updateInjection();
     }
 
@@ -487,28 +487,28 @@ class SettingsPanel extends SignalWatcher(LitElement) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
         customEndFloor.set(value);
-        localStorage.setItem('customEndFloor', value.toString());
+        setSetting('customEndFloor', value);
         this.updateInjection();
     }
     handleLastNFloorsChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
         customEndFloor.set(value);
-        localStorage.setItem('customEndFloor', value.toString());
+        setSetting('customEndFloor', value);
         this.updateInjection();
     }
     handleDisplayModeChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
         displayMode.set(value);
-        localStorage.setItem('displayMode', value.toString());
+        setSetting('displayMode', value);
         this.updateInjection();
     }
     toggleSettingsPanel(event: Event) {
         const isVisible = this.style.display === 'block';
         this.style.display = isVisible ? 'block' : 'node';
         isVisibleSettingsPanel.set(isVisible);
-        localStorage.setItem('isVisibleSettingsPanel', isVisible.toString());
+        setSetting('isVisibleSettingsPanel', isVisible);
     }
     updateInjection() {
         if (!isInjectionEnabled.get()) {
@@ -628,10 +628,7 @@ class EdgeControls extends SignalWatcher(LitElement) {
         this.isDragging = false;
         if (activationMode.get() === 'custom') {
             saveTopPosition.set(this.newTop.toString());
-            localStorage.setItem(
-                "saveTopPosition",
-                this.newTop.toString(),
-            );
+            setSetting('saveTopPosition', this.newTop.toString());
         }
     }
 
@@ -641,13 +638,14 @@ class EdgeControls extends SignalWatcher(LitElement) {
         isEdgeControlsCollapsed.set(!isEdgeControlsCollapsed.get());
         const value = isEdgeControlsCollapsed.get();
         this.style.right = value ? '-100px' : '0';
-        localStorage.setItem('isEdgeControlsCollapsed', value.toString());
+        setSetting('isEdgeControlsCollapsed', value);
     }
     handleToggleChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const isEnabled = target.checked;
         console.log('isEnabled', isEnabled);
         isInjectionEnabled.set(isEnabled);
+        setSetting('isInjectionEnabled', isEnabled);
         if (isEnabled) {
             injectHtmlCode();
         } else {
@@ -689,16 +687,17 @@ class EdgeControls extends SignalWatcher(LitElement) {
 customElements.define('settings-panel', SettingsPanel);
 customElements.define('edge-controls', EdgeControls);
 export function initInjector() {
-    lastMesTextContent.set(localStorage.getItem('lastMesTextContent') || '');
-    isInjectionEnabled.set(JSON.parse(localStorage.getItem('isInjectionEnabled') || "true"));
-    displayMode.set(Number.parseInt(localStorage.getItem('displayMode') || '1'));
-    activationMode.set(localStorage.getItem('activationMode') || 'all');
-    customStartFloor.set(Number.parseInt(localStorage.getItem('customStartFloor') || '1'));
-    customEndFloor.set(Number.parseInt(localStorage.getItem('customEndFloor') || '-1'));
-    savedPosition.set(localStorage.getItem('edgeControlsPosition') || 'top-right');
-    isEdgeControlsCollapsed.set(JSON.parse(localStorage.getItem('isEdgeControlsCollapsed') || "true"));
-    isVisibleSettingsPanel.set(JSON.parse(localStorage.getItem('isVisibleSettingsPanel') || "true"));
-    saveTopPosition.set(localStorage.getItem('saveTopPosition') || '');
+    const settings = getSettings()
+    lastMesTextContent.set(settings.lastMesTextContent ?? (localStorage.getItem('lastMesTextContent') || ''));
+    isInjectionEnabled.set(settings.isInjectionEnabled ?? JSON.parse(localStorage.getItem('isInjectionEnabled') || "true"));
+    displayMode.set(settings.displayMode ?? Number.parseInt(localStorage.getItem('displayMode') || '1'));
+    activationMode.set(settings.activationMode ?? (localStorage.getItem('activationMode') || 'all'));
+    customStartFloor.set(settings.customStartFloor ?? Number.parseInt(localStorage.getItem('customStartFloor') || '1'));
+    customEndFloor.set(settings.customEndFloor ?? Number.parseInt(localStorage.getItem('customEndFloor') || '-1'));
+    savedPosition.set(settings.savedPosition ?? (localStorage.getItem('edgeControlsPosition') || 'top-right'));
+    isEdgeControlsCollapsed.set(settings.isEdgeControlsCollapsed ?? (JSON.parse(localStorage.getItem('isEdgeControlsCollapsed') || "true")));
+    isVisibleSettingsPanel.set(settings.isVisibleSettingsPanel ?? JSON.parse(localStorage.getItem('isVisibleSettingsPanel') || "true"));
+    saveTopPosition.set(settings.saveTopPosition ?? (localStorage.getItem('saveTopPosition') || ''));
     const settingsPanel = document.createElement('settings-panel') as SettingsPanel;
     const edgeControls = document.createElement('edge-controls') as EdgeControls;
     settingsPanel.id = 'html-injector-settings';

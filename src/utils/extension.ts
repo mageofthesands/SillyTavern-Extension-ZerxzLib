@@ -21,6 +21,13 @@ export function useExtensionSetting(path: string | undefined = undefined) {
         _extensionSettings[path] = value;
         saveSettingsDebounced();
     }
+    function setSettings(settings: Record<string, any>) {
+        Object.assign(_extensionSettings, settings);
+        saveSettingsDebounced();
+    }
+    function getSettings() {
+        return _extensionSettings;
+    }
     function getSetting(path: string) {
         return _extensionSettings[path];
     }
@@ -30,6 +37,8 @@ export function useExtensionSetting(path: string | undefined = undefined) {
         extensionSettings: _extensionSettings,
         setSetting,
         getSetting,
+        setSettings,
+        getSettings,
         saveSettingsDebounced,
         extensionFolderPath,
     }
