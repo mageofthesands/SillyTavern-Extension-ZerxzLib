@@ -2,8 +2,11 @@ import { LitElement, html, type PropertyDeclarations } from 'lit';
 import { ref, createRef } from 'lit/directives/ref.js';
 import { SignalWatcher, signal, watch } from '@lit-labs/signals';
 import { type StyleInfo, styleMap } from 'lit/directives/style-map.js';
+import { classMap } from 'lit/directives/class-map.js';
 import { useExtensionSetting } from 'utils/extension';
-const { } = useExtensionSetting("zerxz-lib");
+import { htmlInjectorSettings } from 'utils/setting';
+import { t } from '../../../../../i18n';
+const { hiddenEdgeControls } = htmlInjectorSettings.getSignals();
 class ZerxzLibContainer extends LitElement {
     protected createRenderRoot(): HTMLElement | DocumentFragment {
         return this;
@@ -16,12 +19,26 @@ class ZerxzLibContainer extends LitElement {
                 <b>ZerxzLib</b>
                 <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
             </div>
-            <div class="inline-drawer-content">
-
-            </div>
+            <div class="inline-drawer-content" >
+    <div class="flex-container" >
+        <div class="menu_button menu_button_icon interactable" @click=${this.handlerHiddenEdgeControl}>
+            <i class=${classMap({
+            "fa-solid": true,
+            "fa-bug": hiddenEdgeControls.get(),
+            "fa-bug-slash": !hiddenEdgeControls.get(),
+        })} ></i>
+            <small >${!hiddenEdgeControls.get() ? "隐藏" : "显示"}注入面板</small>
+        </div>
+    </div>
+    <hr>
+</div>
         </div>
     </div>
     `;
+    }
+    handlerHiddenEdgeControl() {
+        hiddenEdgeControls.set(!hiddenEdgeControls.get());
+        this.requestUpdate();
     }
 }
 

@@ -3,24 +3,28 @@ import { ref, createRef } from 'lit/directives/ref.js';
 import { SignalWatcher, signal, watch } from '@lit-labs/signals';
 import { type StyleInfo, styleMap } from 'lit/directives/style-map.js';
 import { useExtensionSetting } from '../utils/extension';
-const { saveSettingsDebounced, extensionSettings, setSetting, getSettings, setSettings } = useExtensionSetting("HtmlInjector");
+import { htmlInjectorSettings } from 'utils/setting';
+const { saveSettingsDebounced, extensionSettings, setSetting, getSettings, getSignals } = htmlInjectorSettings
 // This function is called when the extension settings are changed in the UI
 function onExampleInput() {
     extensionSettings.example_setting = "测试";
     saveSettingsDebounced();
     setSetting('example_setting2', '测试');
 }
+const {
+    lastMesTextContent,
+    isInjectionEnabled,
+    displayMode,
+    activationMode,
+    customStartFloor,
+    customEndFloor,
+    savedPosition,
+    isEdgeControlsCollapsed,
+    isVisibleSettingsPanel,
+    saveTopPosition,
+    hiddenEdgeControls,
+} = getSignals();
 // ---------------------------------------- 全局变量 --------------------------------
-const isInjectionEnabled = signal(false);
-const displayMode = signal(1);
-const lastMesTextContent = signal('');
-const activationMode = signal('all');
-const customStartFloor = signal(1);
-const customEndFloor = signal(-1);
-const savedPosition = signal('top-right');
-const isEdgeControlsCollapsed = signal<boolean>(true);
-const isVisibleSettingsPanel = signal<boolean>(true);
-const saveTopPosition = signal('');
 const chatElement = $<HTMLDivElement>('#chat');
 const observer = new MutationObserver((mutations) => {
     let canInject = false;
@@ -433,14 +437,14 @@ class SettingsPanel extends SignalWatcher(LitElement) {
                     <div id="custom-floor-settings" class="settings-subsection" style=${styleMap({
             display: activationMode.get() === 'custom' ? 'block' : 'none'
         })} ${ref(this.customFloorSettingsRef)}>
-                        <label class="settings-option">起始楼层: <input type="number" id="custom-start-floor" min="1" .value=${customStartFloor.get()} @change=${this.handleCustomStartFloorChange}></label>
-                        <label class="settings-option">结束楼层: <input type="number" id="custom-end-floor" min="-1" .value=${customEndFloor.get()} @change=${this.handleCustomEndFloorChange}></label>
+                        <label class="settings-option">起始楼层: <input type="number" id="custom-start-floor" min="1" .value=${customStartFloor.get().toString()} @change=${this.handleCustomStartFloorChange}></label>
+                        <label class="settings-option">结束楼层: <input type="number" id="custom-end-floor" min="-1" .value=${customEndFloor.get().toString()} @change=${this.handleCustomEndFloorChange}></label>
                         <p class="settings-note">（-1 表示最后一层）</p>
                     </div>
                     <div id="last-n-settings" class="settings-subsection" style=${styleMap({
             display: activationMode.get() === 'lastN' ? 'block' : 'none'
         })} ${ref(this.LastSettingsRef)} >
-                        <label class="settings-option">最后 <input type="number" id="last-n-floors" min="1" .value=${customEndFloor.get()}  @change=${this.handleLastNFloorsChange}> 层</label>
+                        <label class="settings-option">最后 <input type="number" id="last-n-floors" min="1" .value=${customEndFloor.get().toString()}  @change=${this.handleLastNFloorsChange}> 层</label>
                     </div>
                 </div>
             </div>
@@ -470,7 +474,6 @@ class SettingsPanel extends SignalWatcher(LitElement) {
         const target = event.target as HTMLSelectElement;
         const value = target.value;
         activationMode.set(value);
-        setSetting('activationMode', value);
         this.updateInjection();
     }
     handleSavePositionChange(event: Event) {
@@ -478,15 +481,12 @@ class SettingsPanel extends SignalWatcher(LitElement) {
         const value = target.value;
         savedPosition.set(value);
         isEdgeControlsCollapsed.set(false);
-        setSetting("isEdgeControlsCollapsed", false);
-        setSetting('edgeControlsPosition', value);
         this.edgeControls.updateEdgeControlsPosition(value);
     }
     handleCustomStartFloorChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
         customStartFloor.set(value);
-        setSetting('customStartFloor', value);
         this.updateInjection();
     }
 
@@ -494,28 +494,24 @@ class SettingsPanel extends SignalWatcher(LitElement) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
         customEndFloor.set(value);
-        setSetting('customEndFloor', value);
         this.updateInjection();
     }
     handleLastNFloorsChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
         customEndFloor.set(value);
-        setSetting('customEndFloor', value);
         this.updateInjection();
     }
     handleDisplayModeChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
         displayMode.set(value);
-        setSetting('displayMode', value);
         this.updateInjection();
     }
     toggleSettingsPanel(event: Event) {
         const isVisible = this.style.display === 'block';
         this.style.display = isVisible ? 'block' : 'node';
         isVisibleSettingsPanel.set(isVisible);
-        setSetting('isVisibleSettingsPanel', isVisible);
     }
     updateInjection() {
         if (!isInjectionEnabled.get()) {
@@ -609,6 +605,7 @@ class EdgeControls extends SignalWatcher(LitElement) {
             this.style.right = isEdgeControlsCollapsed.get() ? '-100px' : '0';
             this.style.left = 'auto';
         }
+        this.style.display = hiddenEdgeControls.get() ? 'none' : 'block';
         return html`
             <div id="html-injector-drag-handle" @mousedown=${this.handleDragStart} @touchstart=${this.handleDragStart}>
                 <div class="drag-dots">
@@ -654,7 +651,6 @@ class EdgeControls extends SignalWatcher(LitElement) {
         this.isDragging = false;
         if (activationMode.get() === 'custom') {
             saveTopPosition.set(this.newTop.toString());
-            setSetting('saveTopPosition', this.newTop.toString());
         }
     }
 
@@ -689,14 +685,12 @@ class EdgeControls extends SignalWatcher(LitElement) {
                 borderRadius: '5px 0 0 5px'
             })
         };
-        setSetting('isEdgeControlsCollapsed', value);
     }
     handleToggleChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const isEnabled = target.checked;
         console.log('isEnabled', isEnabled);
         isInjectionEnabled.set(isEnabled);
-        setSetting('isInjectionEnabled', isEnabled);
         if (isEnabled) {
             injectHtmlCode();
         } else {
@@ -711,12 +705,6 @@ class EdgeControls extends SignalWatcher(LitElement) {
         this.updateEdgeControlsPosition(savedPosition.get());
     }
     updateEdgeControlsPosition(position: string) {
-        // 处理隐藏状态
-        if (position === 'hidden') {
-            this.style.display = 'none';
-            return;
-        }
-        this.style.display = 'block';
         // 确定是左侧还是右侧
         const isLeft = position.includes('left');
         // 更新面板的样式类
@@ -743,10 +731,10 @@ class EdgeControls extends SignalWatcher(LitElement) {
                 this.style.transform = 'translateY(-50%)';
                 break;
             case 'custom':
-
-                this.style.top = watch(saveTopPosition) ? `${watch(saveTopPosition)}px` : "20vh";
+                this.style.top = saveTopPosition.get() ? `${saveTopPosition.get()}px` : "20vh";
                 this.style.transform = 'none';
                 break;
+
         }
         // 设置水平位置
         if (isLeft) {
@@ -777,17 +765,6 @@ class EdgeControls extends SignalWatcher(LitElement) {
 customElements.define('settings-panel', SettingsPanel);
 customElements.define('edge-controls', EdgeControls);
 export function initInjector() {
-    const settings = getSettings()
-    lastMesTextContent.set(settings.lastMesTextContent ?? (localStorage.getItem('lastMesTextContent') || ''));
-    isInjectionEnabled.set(settings.isInjectionEnabled ?? JSON.parse(localStorage.getItem('isInjectionEnabled') || "true"));
-    displayMode.set(settings.displayMode ?? Number.parseInt(localStorage.getItem('displayMode') || '1'));
-    activationMode.set(settings.activationMode ?? (localStorage.getItem('activationMode') || 'all'));
-    customStartFloor.set(settings.customStartFloor ?? Number.parseInt(localStorage.getItem('customStartFloor') || '1'));
-    customEndFloor.set(settings.customEndFloor ?? Number.parseInt(localStorage.getItem('customEndFloor') || '-1'));
-    savedPosition.set(settings.savedPosition ?? (localStorage.getItem('edgeControlsPosition') || 'top-right'));
-    isEdgeControlsCollapsed.set(settings.isEdgeControlsCollapsed ?? (JSON.parse(localStorage.getItem('isEdgeControlsCollapsed') || "true")));
-    isVisibleSettingsPanel.set(settings.isVisibleSettingsPanel ?? JSON.parse(localStorage.getItem('isVisibleSettingsPanel') || "true"));
-    saveTopPosition.set(settings.saveTopPosition ?? (localStorage.getItem('saveTopPosition') || ''));
     const settingsPanel = document.createElement('settings-panel') as SettingsPanel;
     const edgeControls = document.createElement('edge-controls') as EdgeControls;
     settingsPanel.id = 'html-injector-settings';
