@@ -1,11 +1,6 @@
 import { LitElement, html, type PropertyDeclarations } from 'lit';
-import { ref, createRef } from 'lit/directives/ref.js';
-import { SignalWatcher, signal, watch } from '@lit-labs/signals';
-import { type StyleInfo, styleMap } from 'lit/directives/style-map.js';
 import { classMap } from 'lit/directives/class-map.js';
-import { useExtensionSetting } from 'utils/extension';
 import { htmlInjectorSettings } from 'utils/setting';
-import { t } from '../../../../../i18n';
 const { hiddenEdgeControls } = htmlInjectorSettings.getSignals();
 class ZerxzLibContainer extends LitElement {
     protected createRenderRoot(): HTMLElement | DocumentFragment {
