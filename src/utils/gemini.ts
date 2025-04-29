@@ -1,6 +1,7 @@
 import { oai_settings } from "@silly-tavern/scripts/openai.js";
 import { callGenericPopup, POPUP_TYPE } from "@silly-tavern/scripts/popup.js";
 import { saveKey } from "./utils";
+
 interface GeminiModel {
 	description: string;
 	displayName: string;
@@ -14,9 +15,11 @@ interface GeminiModel {
 	topP: number;
 	version: string;
 }
+
 interface GeminiResponse {
 	models: GeminiModel[];
 }
+
 interface Model {
 	name: string;
 	model: string;
@@ -61,70 +64,70 @@ export function throwGeminiError(text = "") {
 				<table class="responsiveTable">
 					<thead>
 						<tr>
-							<th>报错</th>
-							<th>原因或解决方案</th>
+							<th>Error Code</th>
+							<th>Reason or Solution</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr>
 							<td>429/Resource has been exhausted</td>
-							<td>撞到速率上限了，请等一会，若还是出现此报错请将最大上下文调整至 50k 以下</td>
+							<td>Hit the rate limit, please wait a moment. If this error still appears, please adjust the maximum context to below 50k.</td>
 						</tr>
 						<tr>
 							<td>Internal Server Error</td>
-							<td>手机端遇到请换成 clash，不要使用类如**VPN、** 加速器等第三方梯子软件，pc 端用户请打开服务模式和 tun 模式，若仍出现此报错需要检查一下反向代理-代理地址中是否留空，若有地址请删掉</td>
+							<td>If encountered on mobile, switch to Clash. Do not use third-party proxy software like **VPN** or accelerators. PC users should enable service mode and TUN mode. If this error still occurs, check if the reverse proxy address is empty. If there is an address, delete it.</td>
 						</tr>
 						<tr>
 							<td>User location is not supported for the API use.</td>
-							<td>节点处于被限制的国家，请更换节点(美国最优先，请勿选择欧洲、中国香港、俄罗斯等地区)</td>
+							<td>The node is in a restricted country, please change the node (USA is the highest priority, please do not choose regions like Europe, Hong Kong, Russia, etc.)</td>
 						</tr>
 						<tr>
 							<td>Too Many Requests</td>
-							<td>重刷过于频繁，等待一分钟，若无效则本日请求已达上限</td>
+							<td>Refreshed too frequently, wait one minute. If ineffective, the daily request limit has been reached.</td>
 						</tr>
 						<tr>
 							<td>Bad request</td>
-							<td>网络环境出错或 API 已死（账号或项目被封禁）</td>
+							<td>Network environment error or API is dead (account or project banned)</td>
 						</tr>
 						<tr>
 							<td>API key expired. Please renew the API key</td>
-							<td>API key 已过期或被删除</td>
+							<td>API key has expired or been deleted</td>
 						</tr>
 						<tr>
 							<td>The model is overloaded. Please try later</td>
-							<td>此模型暂时闭馆微调，暂停开放，请换用别的模型或等待一段时间</td>
+							<td>This model is temporarily closed for fine-tuning, temporarily unavailable. Please switch to another model or wait for a period of time.</td>
 						</tr>
 						<tr>
 							<td>Please use a valid role: user, model.</td>
-							<td>你使用了需要打补丁的预设，请换不需要补丁的预设或打补丁</td>
+							<td>You are using a preset that requires patching. Please switch to a preset that does not require patching or apply the patch.</td>
 						</tr>
 						<tr>
 							<td>User location is not supported for the API use without a billing account linked.</td>
-							<td>处在 Google 政策限制免费层级的地区(如英国、意大利)</td>
+							<td>Located in a region restricted for the free tier by Google policy (e.g., UK, Italy)</td>
 						</tr>
 						<tr>
 							<td>API key not valid. Please pass a valid API key</td>
-							<td>API 返回错误，检查 API 是否可用</td>
+							<td>API returned an error, check if the API is available</td>
 						</tr>
 						<tr>
 							<td>Permission denied: Consumer has been suspended.</td>
-							<td>谷歌账号被封禁</td>
+							<td>Google account banned</td>
 						</tr>
 						<tr>
 							<td>MakerSuite API returned no candidate</td>
-							<td>Prompt was blocked due to : OTHER 本次输出被截断，请关闭流式传输</td>
+							<td>Prompt was blocked due to : OTHER. This output was truncated, please turn off streaming.</td>
 						</tr>
 						<tr>
 							<td>Not Found</td>
-							<td>模型选择错误，请不要选择除 Gemini 系外的模型或 Gemini Ultra</td>
+							<td>Incorrect model selection, please do not select models outside the Gemini series or Gemini Ultra.</td>
 						</tr>
 						<tr>
 							<td>MakerSuite Candidate text empty</td>
-							<td>还是截断，解决方法有很多，关闭一些全局世界书/更改输入内容/换版本更新一点的预设</td>
+							<td>Still truncated. There are many solutions: close some global world books / change input content / update to a newer version of the preset.</td>
 						</tr>
 						<tr>
 							<td>403/Forbidden</td>
-							<td>账号或项目被封禁，API key 无法调用</td>
+							<td>Account or project banned, API key cannot be called.</td>
 						</tr>
 					</tbody>
 				</table>
@@ -141,7 +144,7 @@ export async function initGeminiModels(secrets: Record<string, string> = {}) {
 	}
 	const modelStr = JSON.parse(secrets.models_makersuite ?? "[]") as Model[];
 	const api_key = secrets.api_key_makersuite ?? "";
-	console.log("ZerxzLib init");
+	console.log("ZerxzLib init"); // Keeping this as it might be a specific library name
 	const optgroup = $("#model_google_select > optgroup");
 	console.log("optgroup", optgroup);
 	const primaryVersions = optgroup[0];
@@ -161,7 +164,7 @@ export async function initGeminiModels(secrets: Record<string, string> = {}) {
 		...subVersionsValues,
 	].flat();
 	const cachedVersions = modelStr.map((model) => model.model);
-	// 判断是否初次加载
+	// Check if it's the first load
 	if (modelStr.length > 0) {
 		for (const model of modelStr) {
 			if (originalVersions.includes(model.model)) {
@@ -182,7 +185,7 @@ export async function initGeminiModels(secrets: Record<string, string> = {}) {
 	);
 
 	if (geminiModelOptions.length === 0) {
-		console.log("没有新的模型");
+		console.log("No new models");
 	} else {
 		console.log("geminiModelOptions", geminiModelOptions);
 		for (const model of geminiModelOptions) {
