@@ -1,108 +1,123 @@
+# SillyTavern Gemini API Enhancement Plugin - ZerxzLib
 
-# SillyTavern Gemini API 增强插件 - ZerxzLib
+## Introduction
 
-## 简介
+`ZerxzLib` is an extension plugin for SillyTavern designed to enhance the usage experience of the Gemini API. It provides features such as multi-API Key rotation, automatic fetching of new models, and more detailed error message interpretation, helping users use the Gemini API more efficiently and stably.
 
-`ZerxzLib` 是一款为 SillyTavern 提供的扩展插件，旨在增强 Gemini API 的使用体验。它提供多 API Key 轮换、自动拉取新模型、以及更详细的错误提示解读等功能，帮助用户更高效、稳定地使用 Gemini API。
+## Main Features
 
-## 主要功能
+1. **Multi-API Key Rotation:**
 
-1.  **多 API Key 轮换:**
-    *   允许用户配置多个 Gemini API Key，并自动轮换使用。
-    *   当一个 Key 出现问题时，自动切换到下一个可用的 Key，提高稳定性。
-    *   支持在设置界面以文本框形式输入多个 API Key，并以换行或分号分隔。
-    *   界面会显示当前正在使用的 Key 以及上一个使用的 Key。
+   * Allows users to configure multiple Gemini API Keys and automatically rotate their use.
 
-2.  **自动拉取新模型:**
-    *   自动检测 Gemini API 新发布模型。
-    *   将新模型添加到 SillyTavern 的模型选择列表中。
-    *   仅当模型列表发生变化时，更新配置，避免重复更新。
-    *  **注意：**  初次加载插件时，会将所有 Gemini 模型都加入到列表中。
+   * Automatically switches to the next available Key when one Key encounters an issue, improving stability.
 
-3.  **报错提示解读:**
-    *   当 Gemini API 返回错误时，显示更详细的错误信息，包括常见错误的原因和可能的解决方案。
-    *   提供常见错误代码及对应的解释，方便用户快速定位问题。
-    *   用户可以选择是否启用此功能，仅在需要时显示详细错误信息。
-    *   错误信息会以弹窗形式展示，并提供详细的错误原因和解决方案表格。
+   * Supports entering multiple API Keys in a text box in the settings interface, separated by newlines or semicolons.
 
-4.  **密钥切换开关:**
-    *   用户可以开关密钥轮换功能。
-    *   当开关关闭时，插件不会自动轮换密钥。
+   * The interface will display the currently used Key and the previously used Key.
 
-5.  **报错开关:**
-    *   用户可以开关报错功能。
-    *   当开关关闭时，插件不会显示详细的错误信息。
+2. **Automatic Fetching of New Models:**
 
-## 使用方法
+   * Automatically detects newly released Gemini API models.
 
-1.  **安装 (方法一):**
-    *   将插件代码复制到 SillyTavern 的 `public/scripts/extensions/third-party` 目录下。
-    *   确保 `manifest.json` 文件中的 `js` 字段指向正确的 `zerxzLib.js` 文件路径。
+   * Adds new models to SillyTavern's model selection list.
 
-2.  **安装 (方法二):**
-    *   在 SillyTavern 的扩展页面中，点击右上角的 "安装扩展" 按钮。
-    *   在弹出的窗口中输入本插件的存储库地址 (例如：`https://github.com/ZerxZ/SillyTavern-Extension-ZerxzLib`) 即可安装。
+   * Updates the configuration only when the model list changes, avoiding redundant updates.
 
-3.  **配置:**
-    *   在 SillyTavern 的 API 设置页面（通常是 Google AI Studio/MakerSuite），你会看到以下增强功能：
-        *   一个文本框，用于输入多个 Gemini API Key，每行一个或用分号分隔。
-        *   当前正在使用的密钥和上一个使用的密钥的显示。
-        *   “获取新的模型”按钮，用于手动拉取新模型。
-        *   “保存密钥”按钮，用于保存多个 API Key 的配置。
-        *   “密钥切换设置”按钮，用于开启或关闭密钥轮换功能。
-        *   “查看报错原因”按钮，用于显示 Gemini API 常见错误信息。
-        *   “报错开关”按钮，用于开启或关闭错误提示功能。
+   * **Note:** Upon initial loading of the plugin, all Gemini models will be added to the list.
 
-4.  **多 API Key:**
-    *   在文本框中输入你的多个 Gemini API Key，每行一个或用分号分隔。
-    *   插件会自动轮换这些 Key，当当前 Key 不可用时，会切换到下一个 Key。
+3. **Error Message Interpretation:**
 
-5.  **自动拉取新模型:**
-    *   插件会自动检测 Gemini API 的新模型，并添加到 SillyTavern 的模型选择列表中。
-    *   你也可以点击“获取新的模型”按钮手动触发。
+   * When the Gemini API returns an error, displays more detailed error information, including the reasons for common errors and possible solutions.
 
-6.  **报错提示解读:**
-    *   当 Gemini API 返回错误时，如果启用了此功能，插件会弹出一个包含错误详情和解决方案的窗口。
+   * Provides explanations for common error codes, making it easy for users to quickly identify problems.
 
-7.  **密钥切换开关:**
-    *   点击“密钥切换设置”按钮可以开启或关闭密钥轮换功能。
+   * Users can choose whether to enable this feature to display detailed error information only when needed.
 
-8.  **报错开关:**
-    *   点击“报错开关”按钮可以开启或关闭错误提示功能。
+   * Error messages will be displayed in a popup window, with a detailed table of error reasons and solutions.
 
-## 注意事项
+4. **Key Switching Toggle:**
 
-*   请确保你的 API Key 是有效的。
-*   如果遇到插件无法正常工作，请检查 Console 中的错误信息。
-*   **初次加载插件时，会将所有 Gemini 模型都加入到列表中。**
-*  `Internal Server Error` 错误，手机端用户请使用clash，不要使用第三方梯子软件，pc端用户请打开服务模式和tun模式，若还出现此错误，请删除反向代理-代理地址中的地址。
+   * Users can toggle the key rotation function on or off.
 
-## 文件结构
+   * When the toggle is off, the plugin will not automatically rotate keys.
 
-```
-├── lib/
-│   └── copyFile.js  # 用于复制构建后的文件到 SillyTavern 目录
-├── src/
-│   ├── utils/
-│   │   ├── gemini.ts # Gemini API 相关逻辑
-│   │   └── index.ts # utils 导出
-│   ├── global.d.ts # 全局类型定义
-│   └── index.ts # 插件入口
-├── .babelrc # Babel 配置文件
-├── .gitignore # Git 忽略文件
-├── LICENSE # 开源协议
-├── README.md # 本文档
-├── bun.lockb # Bun 包管理锁定文件
-├── manifest.json # SillyTavern 插件清单
-├── package.json # npm 包管理配置文件
-├── tsconfig.json # TypeScript 配置文件
-└── webpack.config.mjs # Webpack 配置文件
-```
+5. **Error Reporting Toggle:**
 
-## 开源协议
+   * Users can toggle the error reporting function on or off.
 
-本项目使用 GNU Affero General Public License v3 协议，详见 `LICENSE` 文件。
+   * When the toggle is off, the plugin will not display detailed error messages.
 
-## 联系方式
+## Usage
 
-如果你有任何问题或建议，请在 GitHub 仓库中提出 Issues 或联系作者。
+1. **Installation (Method 1):**
+
+   * Copy the plugin code to the `public/scripts/extensions/third-party` directory of SillyTavern.
+
+   * Ensure that the `js` field in the `manifest.json` file points to the correct `zerxzLib.js` file path.
+
+2. **Installation (Method 2):**
+
+   * In the extensions page of SillyTavern, click the "Install Extension" button in the upper right corner.
+
+   * Enter the repository address of this plugin in the popup window (e.g., `https://github.com/ZerxZ/SillyTavern-Extension-ZerxzLib`) to install.
+
+3. **Configuration:**
+
+   * In SillyTavern's API settings page (usually Google AI Studio/MakerSuite), you will see the following enhanced features:
+
+     * A text box for entering multiple Gemini API Keys, one per line or separated by semicolons.
+
+     * Display of the currently used key and the previously used key.
+
+     * A "Fetch New Models" button to manually pull new models.
+
+     * A "Save Key" button to save the configuration of multiple API Keys.
+
+     * A "Key Switching Settings" button to enable or disable the key rotation function.
+
+     * A "View Error Reasons" button to display common Gemini API error messages.
+
+     * An "Error Reporting Toggle" button to enable or disable the error reporting function.
+
+4. **Multiple API Keys:**
+
+   * Enter your multiple Gemini API Keys in the text box, one per line or separated by semicolons.
+
+   * The plugin will automatically rotate these Keys, when the current Key is unavailable, it will switch to the next Key.
+
+5. **Automatic Fetching of New Models:**
+
+   * The plugin will automatically detect new models from the Gemini API and add them to SillyTavern's model selection list.
+
+   * You can also manually trigger this by clicking the "Fetch New Models" button.
+
+6. **Error Message Interpretation:**
+
+   * When the Gemini API returns an error, if this feature is enabled, the plugin will pop up a window containing error details and solutions.
+
+   * Provides explanations for common error codes, making it easy for users to quickly identify problems.
+
+   * Users can choose whether to enable this feature to display detailed error information only when needed.
+
+   * Error messages will be displayed in a popup window, with a detailed table of error reasons and solutions.
+
+7. **Key Switching Toggle:**
+
+   * Click the "Key Switching Settings" button to enable or disable the key rotation function.
+
+8. **Error Reporting Toggle:**
+
+   * Click the "Error Reporting Toggle" button to enable or disable the error reporting function.
+
+## Notes
+
+* Please ensure your API Key is valid.
+
+* If the plugin is not working correctly, please check the error messages in the Console.
+
+* **Upon initial loading of the plugin, all Gemini models will be added to the list.**
+
+* For `Internal Server Error`, mobile users should use Clash and not third-party proxy software. PC users should enable service mode and TUN mode. If this error still occurs, please delete the address in the reverse proxy address.
+
+## File Structure
