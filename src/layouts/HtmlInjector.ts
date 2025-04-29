@@ -4,13 +4,18 @@ import { SignalWatcher, signal, watch } from '@lit-labs/signals';
 import { type StyleInfo, styleMap } from 'lit/directives/style-map.js';
 import { useExtensionSetting } from '../utils/extension';
 import { htmlInjectorSettings } from 'utils/setting';
+
+// Destructure settings and signals from htmlInjectorSettings
 const { saveSettingsDebounced, extensionSettings, setSetting, getSettings, getSignals } = htmlInjectorSettings
+
 // This function is called when the extension settings are changed in the UI
 function onExampleInput() {
-    extensionSettings.example_setting = "测试";
+    extensionSettings.example_setting = "Test"; // Translated from "测试"
     saveSettingsDebounced();
-    setSetting('example_setting2', '测试');
+    setSetting('example_setting2', 'Test'); // Translated from "测试"
 }
+
+// Get signals related to HTML injection and UI state
 const {
     lastMesTextContent,
     isInjectionEnabled,
@@ -24,42 +29,57 @@ const {
     saveTopPosition,
     hiddenEdgeControls,
 } = getSignals();
-// ---------------------------------------- 全局变量 --------------------------------
-const chatElement = $<HTMLDivElement>('#chat');
+
+// ---------------------------------------- Global Variables --------------------------------
+const chatElement = $<HTMLDivElement>('#chat'); // Get the chat element using jQuery
+
+// MutationObserver to watch for changes in the chat element
 const observer = new MutationObserver((mutations) => {
     let canInject = false;
     for (const mutation of mutations) {
+        // Only process childList mutations (when elements are added or removed)
         if (mutation.type !== 'childList') {
             continue;
         }
+
+        // Check if any added node contains a message text element
         const hasNewMesText = Array.from(mutation.addedNodes).some(node => {
+            // Ensure the node is an element
             if (node.nodeType !== Node.ELEMENT_NODE || !(node instanceof HTMLElement)) {
                 return false;
             }
+            // Check if the node itself or a descendant has the 'mes_text' class
             return node.classList.contains('mes_text') || node.querySelector('.mes_text');
         });
 
+        // If a new message text element is found
         if (hasNewMesText) {
-
+            // Check if injection is currently enabled
             if (isInjectionEnabled.get()) {
                 canInject = true;
-
             }
+            // Stop processing mutations once a new message text is found
             break;
         }
     }
+
+    // If a new message text was found and injection is enabled, remove existing iframes and inject new ones
     if (canInject) {
         removeInjectedIframes();
         injectHtmlCode();
     }
 });
-// ---------------------------------------- 初始化 ----------------------------------------
+
+// ---------------------------------------- Initialization ----------------------------------------
+
+// Class to manage iframes for injected HTML
 class IFrameManager {
-    private static instance: IFrameManager;
-    private resizeObservers: Map<HTMLIFrameElement, ResizeObserver> = new Map();
+    private static instance: IFrameManager; // Singleton instance
+    private resizeObservers: Map<HTMLIFrameElement, ResizeObserver> = new Map(); // Map to store ResizeObservers for iframes
 
-    private constructor() { }
+    private constructor() { } // Private constructor for singleton pattern
 
+    // Get the singleton instance
     public static getInstance(): IFrameManager {
         if (!IFrameManager.instance) {
             IFrameManager.instance = new IFrameManager();
@@ -67,35 +87,37 @@ class IFrameManager {
         return IFrameManager.instance;
     }
 
+    // Create a new iframe with the given HTML content
     public createIframe(htmlContent: string): HTMLIFrameElement {
         const iframe = document.createElement('iframe');
         this.setupIframeAttributes(iframe);
-        iframe.srcdoc = this.getIframeSrcContent(htmlContent);
-
-        this.setupIframeEventListeners(iframe);
+        iframe.srcdoc = this.getIframeSrcContent(htmlContent); // Set the iframe content
+        this.setupIframeEventListeners(iframe); // Set up event listeners
         return iframe;
     }
 
+    // Set common attributes and styles for the iframe
     private setupIframeAttributes(iframe: HTMLIFrameElement): void {
         Object.assign(iframe.style, {
             width: '100%',
             border: 'none',
             marginTop: '10px',
-            transition: 'height 0.3s ease' // 添加平滑过渡效果
+            transition: 'height 0.3s ease' // Add smooth transition effect (Translated from "添加平滑过渡效果")
         });
     }
 
+    // Set up event listeners for the iframe
     private setupIframeEventListeners(iframe: HTMLIFrameElement): void {
         iframe.onload = () => {
             this.adjustIframeHeight(iframe);
-            // 延迟再次调整以确保内容完全加载
+            // Delay adjustment again to ensure content is fully loaded (Translated from "延迟再次调整以确保内容完全加载")
             setTimeout(() => this.adjustIframeHeight(iframe), 500);
 
-            // 设置初始主题
+            // Set initial theme (Translated from "设置初始主题")
             this.updateIframeTheme(iframe, getSystemTheme());
         };
 
-        // 创建并存储 ResizeObserver
+        // Create and store ResizeObserver (Translated from "创建并存储 ResizeObserver")
         if (iframe.contentWindow) {
             const resizeObserver = new ResizeObserver(() => this.adjustIframeHeight(iframe));
             this.resizeObservers.set(iframe, resizeObserver);
@@ -108,6 +130,7 @@ class IFrameManager {
         }
     }
 
+    // Adjust the height of the iframe based on its content
     public adjustIframeHeight(iframe: HTMLIFrameElement): void {
         try {
             if (iframe.contentWindow?.document.body) {
@@ -118,20 +141,22 @@ class IFrameManager {
                 iframe.style.height = `${height + 5}px`;
             }
         } catch (error) {
-            console.error('调整iframe高度失败:', error);
+            console.error('Failed to adjust iframe height:', error); // Translated from "调整iframe高度失败:"
         }
     }
 
+    // Update the theme of the iframe content
     public updateIframeTheme(iframe: HTMLIFrameElement, theme: string): void {
         try {
             iframe.contentWindow?.postMessage({ type: 'themeChange', theme }, '*');
         } catch (error) {
-            console.error('更新iframe主题失败:', error);
+            console.error('Failed to update iframe theme:', error); // Translated from "更新iframe主题失败:"
         }
     }
 
+    // Remove an iframe and clean up its ResizeObserver
     public removeIframe(iframe: HTMLIFrameElement): void {
-        // 清理 ResizeObserver
+        // Clean up ResizeObserver (Translated from "清理 ResizeObserver")
         const observer = this.resizeObservers.get(iframe);
         if (observer) {
             observer.disconnect();
@@ -140,12 +165,13 @@ class IFrameManager {
         iframe.remove();
     }
 
+    // Get the full HTML content for the iframe srcdoc
     private getIframeSrcContent(htmlContent: string): string {
         return `
             <html>
     <head>
         <style>
-            /* 自定义样式 */
+            /* Custom Styles (Translated from "自定义样式") */
             ::-webkit-scrollbar {
                 width: 8px;
                 height: 8px;
@@ -249,30 +275,36 @@ class IFrameManager {
 }
 
 
-
-// 修改 removeInjectedIframes 函数
+// Modify removeInjectedIframes function (Translated from "修改 removeInjectedIframes 函数")
 function removeInjectedIframes() {
     const iframeManager = IFrameManager.getInstance();
     const iframes = document.querySelectorAll<HTMLIFrameElement>('.mes_text iframe');
+    // Remove each iframe using the manager
     for (const iframe of Array.from(iframes)) {
         iframeManager.removeIframe(iframe);
     }
+    // Reset display for code elements and remove details wrappers
     const codeElements = document.querySelectorAll<HTMLDivElement>('.mes_text code');
     for (const code of Array.from(codeElements)) {
-        code.style.display = '';
-        const details = code.closest('details');
+        code.style.display = ''; // Show the code element
+        const details = code.closest('details'); // Find the closest details element
         if (details) {
+            // Move the code element out of the details and remove the details
             details.parentNode?.insertBefore(code, details);
             details.remove();
         }
     }
 }
+
+// Inject HTML code into message text elements
 function injectHtmlCode(specificMesText = null as Element | null) {
     console.log('injectHtmlCode');
     try {
+        // Determine which message text elements to target based on activation mode
         const mesTextElements = specificMesText ? [specificMesText] : Array.from(chatElement.find('.mes_text'));
         let targetElements: Element[];
         const iframeManager = IFrameManager.getInstance();
+
         switch (activationMode.get()) {
             case 'first':
                 targetElements = mesTextElements.slice(0, 1);
@@ -281,48 +313,66 @@ function injectHtmlCode(specificMesText = null as Element | null) {
                 targetElements = mesTextElements.slice(-1);
                 break;
             case 'lastN':
-                targetElements = mesTextElements.slice(-customEndFloor);
+                // Target the last N elements based on customEndFloor setting
+                targetElements = mesTextElements.slice(-customEndFloor.get());
                 break;
             case 'custom': {
-                const start = customStartFloor.get() - 1;
-                const end = customEndFloor.get() === -1 ? undefined : customEndFloor.get();
+                // Target a custom range of elements based on customStartFloor and customEndFloor
+                const start = customStartFloor.get() - 1; // Adjust for 0-based index
+                const end = customEndFloor.get() === -1 ? undefined : customEndFloor.get(); // -1 means last element
                 targetElements = mesTextElements.slice(start, end);
                 break;
             }
             default: // 'all'
                 targetElements = mesTextElements;
         }
+
+        // Iterate through the target elements and inject HTML if a code block is found
         for (let i = 0; i < targetElements.length; i++) {
             const mesText = targetElements[i];
             const codeElement = mesText.querySelector('code');
             if (!codeElement) {
-                continue;
+                continue; // Skip if no code element is found
             }
+
+            // Extract HTML content from the code element
             const htmlContent = codeElement.innerText.trim();
+
+            // Basic check to see if the content looks like HTML
             if (!htmlContent.startsWith("<") || !htmlContent.endsWith(">")) {
-                continue;
+                continue; // Skip if it doesn't look like HTML
             }
+
+            // Create and insert the iframe
             const iframe = iframeManager.createIframe(htmlContent);
+            // Apply display mode settings
             if (displayMode.get() === 2) {
+                // Wrap the original code in a details/summary element
                 const details = document.createElement('details');
                 const summary = document.createElement('summary');
-                summary.textContent = '[原代码]';
+                summary.textContent = '[Original Code]'; // Translated from "[原代码]"
                 details.appendChild(summary);
                 codeElement.parentNode?.insertBefore(details, codeElement);
                 details.appendChild(codeElement);
             } else if (displayMode.get() === 3) {
+                // Hide the original code element
                 codeElement.style.display = 'none';
             }
+
+            // Insert the iframe after the code element (or its wrapper)
             codeElement.parentNode?.insertBefore(iframe, codeElement.nextSibling);
 
+            // Append the iframe to the message text element (redundant with insertBefore, might need review)
             mesText.appendChild(iframe);
         }
     } catch (error) {
-        console.error('HTML注入失败:', error);
+        console.error('HTML injection failed:', error); // Translated from "HTML注入失败:"
     }
 }
 
-// ---------------------------------------- 辅助函数 ----------------------------------------
+// ---------------------------------------- Helper Functions ----------------------------------------
+
+// Adjust the height of a single iframe (redundant with IFrameManager method, might need review)
 function adjustIframeHeight(iframe: HTMLIFrameElement) {
     try {
         if (iframe.contentWindow?.document.body) {
@@ -330,214 +380,220 @@ function adjustIframeHeight(iframe: HTMLIFrameElement) {
             iframe.style.height = `${height + 5}px`;
         }
     } catch (error) {
-        console.error('调整iframe高度失败:', error);
+        console.error('Failed to adjust iframe height:', error); // Translated from "调整iframe高度失败:"
     }
 }
+
+// Get the current system theme (dark or light)
 function getSystemTheme() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
+
+// Update the theme of all injected iframes
 function updateAllIframesTheme() {
     const iframes = document.querySelectorAll('.mes_text iframe');
-    // biome-ignore lint/complexity/noForEach: <explanation>
+    // biome-ignore lint/complexity/noForEach: Iterating over a NodeList is acceptable here
     iframes.forEach(iframe => {
         try {
-            // @ts-ignore
+            // @ts-ignore // Ignoring potential type issue with contentWindow
             if (iframe.contentWindow) {
-                // @ts-ignore
+                // @ts-ignore // Ignoring potential type issue with postMessage
                 iframe.contentWindow.postMessage({ type: 'themeChange', theme: getSystemTheme() }, '*');
             }
         } catch (error) {
-            console.error('更新iframe主题失败:', error);
+            console.error('Failed to update iframe theme:', error); // Translated from "更新iframe主题失败:"
         }
     });
 }
 
+// Handle messages received from iframes
 function handleMessage(event: MessageEvent) {
     try {
+        // If the message is 'loaded', adjust the iframe height
         if (event.data === 'loaded') {
             const iframes = document.querySelectorAll<HTMLIFrameElement>('.mes_text iframe');
-            // biome-ignore lint/complexity/noForEach: <explanation>
+            // biome-ignore lint/complexity/noForEach: Iterating over a NodeList is acceptable here
             iframes.forEach(iframe => {
-                // @ts-ignore
+                // @ts-ignore // Ignoring potential type issue with contentWindow
                 if (iframe.contentWindow === event.source) {
                     adjustIframeHeight(iframe);
                 }
             });
         } else if (event.data.type === 'buttonClick') {
+            // If a button in an iframe was clicked, find and click the corresponding QR button in the main document
             const buttonName = event.data.name;
             jQuery('.qr--button.menu_button').each(function () {
                 if (jQuery(this).find('.qr--button-label').text().trim() === buttonName) {
                     jQuery(this).trigger('click');
-                    return false;
+                    return false; // Stop iteration
                 }
             });
         } else if (event.data.type === 'textInput') {
+            // If text was input in an iframe textarea, update the main send textarea
             const sendTextarea = document.getElementById('send_textarea');
             if (sendTextarea) {
-                // @ts-ignore
+                // @ts-ignore // Ignoring potential type issue with value
                 sendTextarea.value = event.data.text;
+                // Dispatch input and change events to trigger SillyTavern's internal handling
                 sendTextarea.dispatchEvent(new Event('input', { bubbles: true }));
                 sendTextarea.dispatchEvent(new Event('change', { bubbles: true }));
             }
         } else if (event.data.type === 'sendClick') {
+            // If the send button in an iframe was clicked, click the main send button
             const sendButton = document.getElementById('send_but');
             if (sendButton) {
                 sendButton.click();
             }
         }
     } catch (error) {
-        console.error('处理消息失败:', error);
+        console.error('Failed to handle message:', error); // Translated from "处理消息失败:"
     }
 }
+
+// LitElement component for the settings panel
 class SettingsPanel extends SignalWatcher(LitElement) {
+    // Disable shadow DOM
     protected createRenderRoot(): HTMLElement | DocumentFragment {
         return this;
     }
+
+    // Create refs for specific elements in the template
     public customFloorSettingsRef = createRef<HTMLDivElement>();
     public LastSettingsRef = createRef<HTMLDivElement>();
+
+    // Declare a property to hold a reference to the EdgeControls component
     declare edgeControls: EdgeControls
+
+    // Render method for the settings panel
     render() {
+        // Control the display of the settings panel based on its visibility signal
         this.style.display = isVisibleSettingsPanel.get() ? 'none' : 'block';
-        this.classList.add('drawer');
+        this.classList.add('drawer'); // Add drawer class
+
         return html`
-        <div id="html-injector-settings-header" class="inline-drawer-header">
-                <span class="inline-drawer-title">HTML注入器设置</span>
-                <div id="html-injector-close-settings" class="inline-drawer-icon fa-solid fa-circle-xmark" @click=${this.toggleSettingsPanel}></div>
+            <div id="html-injector-settings-header" class="inline-drawer-header">
+                <span class="inline-drawer-title">HTML Injector Settings</span> <div id="html-injector-close-settings" class="inline-drawer-icon fa-solid fa-circle-xmark" @click=${this.toggleSettingsPanel}></div>
             </div>
             <div id="settings-content">
                 <div class="settings-section">
-                    <h3 class="settings-subtitle">边缘控制面板位置</h3>
-                <select id="edge-controls-position" class="settings-select theme-element" @change=${this.handleSavePositionChange}>
-                    <option value="top-right"            .selected=${savedPosition.get() === "top-right"}>界面右上角</option>
-                    <option value="right-three-quarters" .selected=${savedPosition.get() === "right-three-quarters"}>界面右侧3/4位置</option>
-                    <option value="right-middle"         .selected=${savedPosition.get() === "right-middle"}>界面右侧中间</option>
-                    <option value="top-left"             .selected=${savedPosition.get() === "top-left"}>界面左上角</option>
-                    <option value="left-three-quarters"  .selected=${savedPosition.get() === "left-three-quarters"}>界面左侧3/4位置</option>
-                    <option value="left-middle"          .selected=${savedPosition.get() === "left-middle"}>界面左侧中间</option>
-                    <option value="custom"               .selected=${savedPosition.get() === "custom"}>自定义位置</option>
-                    <option value="hidden"               .selected=${savedPosition.get() === "hidden"}>隐藏</option>
-
-                </select>
+                    <h3 class="settings-subtitle">Edge Control Panel Position</h3> <select id="edge-controls-position" class="settings-select theme-element" @change=${this.handleSavePositionChange}>
+                    <option value="top-right"                     .selected=${savedPosition.get() === "top-right"}>Top Right of Interface</option> <option value="right-three-quarters" .selected=${savedPosition.get() === "right-three-quarters"}>Right Side 3/4 Position</option> <option value="right-middle"           .selected=${savedPosition.get() === "right-middle"}>Right Side Middle</option> <option value="top-left"             .selected=${savedPosition.get() === "top-left"}>Top Left of Interface</option> <option value="left-three-quarters"  .selected=${savedPosition.get() === "left-three-quarters"}>Left Side 3/4 Position</option> <option value="left-middle"          .selected=${savedPosition.get() === "left-middle"}>Left Side Middle</option> <option value="custom"               .selected=${savedPosition.get() === "custom"}>Custom Position</option> <option value="hidden"               .selected=${savedPosition.get() === "hidden"}>Hidden</option> </select>
                 </div>
                 <div class="settings-section">
-                <h3 class="settings-subtitle">显示模式</h3>
-                <label class="settings-option"><input type="radio" name="display-mode" value="1" .checked=${displayMode.get() === 1} @change=${this.handleDisplayModeChange}> 原代码和注入效果一起显示</label>
-                <label class="settings-option"><input type="radio" name="display-mode" value="2" .checked=${displayMode.get() === 2} @change=${this.handleDisplayModeChange}> 原代码以摘要形式显示</label>
-                <label class="settings-option"><input type="radio" name="display-mode" value="3" .checked=${displayMode.get() === 3} @change=${this.handleDisplayModeChange}> 隐藏原代码，只显示注入效果</label>
-            </div>
+                <h3 class="settings-subtitle">Display Mode</h3> <label class="settings-option"><input type="radio" name="display-mode" value="1" .checked=${displayMode.get() === 1} @change=${this.handleDisplayModeChange}> Show Original Code and Injected Effect Together</label> <label class="settings-option"><input type="radio" name="display-mode" value="2" .checked=${displayMode.get() === 2} @change=${this.handleDisplayModeChange}> Show Original Code as Summary</label> <label class="settings-option"><input type="radio" name="display-mode" value="3" .checked=${displayMode.get() === 3} @change=${this.handleDisplayModeChange}> Hide Original Code, Show Only Injected Effect</label> </div>
                 <div class="settings-section">
-                    <h3 class="settings-subtitle">激活楼层</h3>
-                    <select id="activation-mode" class="settings-select theme-element" @change=${this.handleActivationModeChange} >
-                        <option value="all"    .selected=${activationMode.get() === "all"}>全部楼层</option>
-                        <option value="first"  .selected=${activationMode.get() === "first"}>第一层</option>
-                        <option value="last"   .selected=${activationMode.get() === "last"}>最后一层</option>
-                        <option value="lastN"  .selected=${activationMode.get() === "lastN"}>最后N层</option>
-                        <option value="custom" .selected=${activationMode.get() === "custom"}>自定义楼层</option>
-                    </select>
+                    <h3 class="settings-subtitle">Activation Floor</h3> <select id="activation-mode" class="settings-select theme-element" @change=${this.handleActivationModeChange} >
+                        <option value="all"    .selected=${activationMode.get() === "all"}>All Floors</option> <option value="first"  .selected=${activationMode.get() === "first"}>First Floor</option> <option value="last"    .selected=${activationMode.get() === "last"}>Last Floor</option> <option value="lastN"  .selected=${activationMode.get() === "lastN"}>Last N Floors</option> <option value="custom" .selected=${activationMode.get() === "custom"}>Custom Floors</option> </select>
                     <div id="custom-floor-settings" class="settings-subsection" style=${styleMap({
-            display: activationMode.get() === 'custom' ? 'block' : 'none'
-        })} ${ref(this.customFloorSettingsRef)}>
-                        <label class="settings-option">起始楼层: <input type="number" id="custom-start-floor" min="1" .value=${customStartFloor.get().toString()} @change=${this.handleCustomStartFloorChange}></label>
-                        <label class="settings-option">结束楼层: <input type="number" id="custom-end-floor" min="-1" .value=${customEndFloor.get().toString()} @change=${this.handleCustomEndFloorChange}></label>
-                        <p class="settings-note">（-1 表示最后一层）</p>
-                    </div>
+                display: activationMode.get() === 'custom' ? 'block' : 'none'
+            })} ${ref(this.customFloorSettingsRef)}>
+                        <label class="settings-option">Start Floor: <input type="number" id="custom-start-floor" min="1" .value=${customStartFloor.get().toString()} @change=${this.handleCustomStartFloorChange}></label> <label class="settings-option">End Floor: <input type="number" id="custom-end-floor" min="-1" .value=${customEndFloor.get().toString()} @change=${this.handleCustomEndFloorChange}></label> <p class="settings-note">(-1 means last floor)</p> </div>
                     <div id="last-n-settings" class="settings-subsection" style=${styleMap({
-            display: activationMode.get() === 'lastN' ? 'block' : 'none'
-        })} ${ref(this.LastSettingsRef)} >
-                        <label class="settings-option">最后 <input type="number" id="last-n-floors" min="1" .value=${customEndFloor.get().toString()}  @change=${this.handleLastNFloorsChange}> 层</label>
-                    </div>
+                display: activationMode.get() === 'lastN' ? 'block' : 'none'
+            })} ${ref(this.LastSettingsRef)} >
+                        <label class="settings-option">Last <input type="number" id="last-n-floors" min="1" .value=${customEndFloor.get().toString()}  @change=${this.handleLastNFloorsChange}> Floors</label> </div>
                 </div>
             </div>
             <div class="settings-footer">
-                <p>安全提醒：请仅注入您信任的代码。不安全的代码可能会对您的系统造成潜在风险。</p>
-                <p>注意：要注入的 HTML 代码应该用 \`\`\` 包裹，例如：</p>
-                <pre class="code-example">
+                <p>Security Reminder: Please only inject code you trust. Unsafe code may pose potential risks to your system.</p> <p>Note: The HTML code to be injected should be wrapped in \`\`\`, for example:</p> <pre class="code-example">
 \`\`\`
 &lt;h1&gt;Hello, World!&lt;/h1&gt;
 &lt;p&gt;This is an example.&lt;/p&gt;
 \`\`\`
         </pre>
-        <p>以下是对应ST酒馆功能的特殊类名及简单的使用方法：</p>
-        <pre class="code-example">
+        <p>The following are special class names corresponding to ST Tavern functions and simple usage methods:</p> <pre class="code-example">
 \`\`\`
-&lt;button class="qr-button"&gt;(你的QR按钮名字)&lt;/button&gt;
-&lt;textarea class="st-text"&gt;(对应酒馆的输入文本框，输入内容会同步到酒馆的文本框里)&lt;/textarea&gt;
-&lt;button class="st-send-button"&gt;(对应酒馆的发送按钮)&lt;/button&gt;
-\`\`\`
+&lt;button class="qr-button"&gt;(Your QR button name)&lt;/button&gt; &lt;textarea class="st-text"&gt;(Corresponds to the tavern's input text box, input content will sync to the tavern's text box)&lt;/textarea&gt; &lt;button class="st-send-button"&gt;(Corresponds to the tavern's send button)&lt;/button&gt; \`\`\`
                 </pre>
-                <p>【注意】通过JavaScript动态插入st-text框的内容同步到st酒馆的输入框需要处理时间，如果需要同步，请添加一个小延迟来确保文本有时间进行同步.</p>
-                <a href="https://discord.com/channels/1134557553011998840/1271783456690409554" target="_blank"> →Discord教程帖指路← 有详细说明与gal界面等模版 </a>
-            </div>
+                <p>【Note】Synchronizing the content of the st-text box dynamically inserted by JavaScript to the ST Tavern input box requires processing time. If synchronization is needed, please add a small delay to ensure the text has time to synchronize.</p> <a href="https://discord.com/channels/1134557553011998840/1271783456690409554" target="_blank"> →Discord Tutorial Post Link← Contains detailed instructions and templates like the gal interface </a> </div>
         `
     }
+
+    // Handlers for settings changes
     handleActivationModeChange(event: Event) {
         const target = event.target as HTMLSelectElement;
         const value = target.value;
-        activationMode.set(value);
-        this.updateInjection();
+        activationMode.set(value); // Update the activation mode signal
+        this.updateInjection(); // Trigger injection update
     }
+
     handleSavePositionChange(event: Event) {
         const target = event.target as HTMLSelectElement;
         const value = target.value;
-        savedPosition.set(value);
-        isEdgeControlsCollapsed.set(false);
-        this.edgeControls.updateEdgeControlsPosition(value);
+        savedPosition.set(value); // Update the saved position signal
+        isEdgeControlsCollapsed.set(false); // Ensure edge controls are not collapsed when position changes
+        this.edgeControls.updateEdgeControlsPosition(value); // Update the position of the edge controls component
     }
+
     handleCustomStartFloorChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
-        customStartFloor.set(value);
-        this.updateInjection();
+        customStartFloor.set(value); // Update the custom start floor signal
+        this.updateInjection(); // Trigger injection update
     }
 
     handleCustomEndFloorChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
-        customEndFloor.set(value);
-        this.updateInjection();
+        customEndFloor.set(value); // Update the custom end floor signal
+        this.updateInjection(); // Trigger injection update
     }
+
     handleLastNFloorsChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
-        customEndFloor.set(value);
-        this.updateInjection();
+        customEndFloor.set(value); // Update the custom end floor signal (used for lastN in this case)
+        this.updateInjection(); // Trigger injection update
     }
+
     handleDisplayModeChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const value = Number.parseInt(target.value);
-        displayMode.set(value);
-        this.updateInjection();
+        displayMode.set(value); // Update the display mode signal
+        this.updateInjection(); // Trigger injection update
     }
+
+    // Toggle the visibility of the settings panel
     toggleSettingsPanel(event: Event) {
         const isVisible = this.style.display === 'block';
-        this.style.display = isVisible ? 'block' : 'node';
-        isVisibleSettingsPanel.set(isVisible);
+        this.style.display = isVisible ? 'block' : 'node'; // Toggle display style
+        isVisibleSettingsPanel.set(isVisible); // Update the visibility signal
     }
+
+    // Update the injected HTML based on current settings
     updateInjection() {
         if (!isInjectionEnabled.get()) {
-            return
+            return // Do nothing if injection is not enabled
         }
-        removeInjectedIframes();
-        injectHtmlCode();
+        removeInjectedIframes(); // Remove existing iframes
+        injectHtmlCode(); // Inject HTML code based on current settings
     }
 }
+
+// LitElement component for the edge controls panel
 class EdgeControls extends SignalWatcher(LitElement) {
+    // Define properties
     static properties: PropertyDeclarations = {
-        settingsPanel: { type: Object },
-        toggleEdgeButtonStyle: { type: Object },
-        isDragging: { type: Boolean },
-        startY: { type: Number },
-        startTop: { type: Number },
-        newTop: { type: Number }
+        settingsPanel: { type: Object }, // Reference to the settings panel component
+        toggleEdgeButtonStyle: { type: Object }, // Style object for the toggle button
+        isDragging: { type: Boolean }, // State for dragging
+        startY: { type: Number }, // Starting Y position for dragging
+        startTop: { type: Number }, // Starting top position of the element for dragging
+        newTop: { type: Number } // New top position during dragging
     }
+
+    // Declare properties with their types
     public declare settingsPanel: SettingsPanel;
     public declare toggleEdgeButtonStyle: StyleInfo;
     public declare isDragging: boolean;
     public declare startY: number;
     public declare startTop: number;
     public newTop: number
+
+    // Constructor
     constructor() {
         super();
+        // Initialize properties based on saved position
         const position = savedPosition.get();
         const isLeft = position.includes('left');
         this.toggleEdgeButtonStyle = {
@@ -568,34 +624,44 @@ class EdgeControls extends SignalWatcher(LitElement) {
         this.startY = 0;
         this.startTop = 0;
         this.newTop = 0;
-
-
     }
+
+    // Disable shadow DOM
     protected createRenderRoot(): HTMLElement | DocumentFragment {
         return this;
     }
+
+    // Lifecycle callback when the element is added to the DOM
     connectedCallback() {
         super.connectedCallback();
+        // Add event listeners for dragging
         document.addEventListener('mousemove', this.handleDragMove.bind(this));
-        // @ts-ignore
+        // @ts-ignore // Ignoring potential type issue with mouseup event
         document.addEventListener('mouseup', this.handleDragEnd.bind(this));
         document.addEventListener('touchmove', this.handleDragMove.bind(this));
-        // @ts-ignore
+        // @ts-ignore // Ignoring potential type issue with touchend event
         document.addEventListener('touchend', this.handleDragEnd.bind(this));
     }
+
+    // Lifecycle callback when the element is removed from the DOM
     disconnectedCallback() {
         super.disconnectedCallback();
+        // Remove event listeners for dragging
         document.removeEventListener('mousemove', this.handleDragMove.bind(this));
-        // @ts-ignore
+        // @ts-ignore // Ignoring potential type issue with mouseup event
         document.removeEventListener('mouseup', this.handleDragEnd.bind(this));
         document.removeEventListener('touchmove', this.handleDragMove.bind(this));
-        // @ts-ignore
+        // @ts-ignore // Ignoring potential type issue with touchend event
         document.removeEventListener('touchend', this.handleDragEnd.bind(this));
     }
+
+    // Render method for the edge controls panel
     protected render(): unknown {
         console.log('render edge controls');
         console.log('isInjectionEnabled', isInjectionEnabled.get());
         console.log('isVisibleSettingsPanel', isVisibleSettingsPanel.get());
+
+        // Determine horizontal position based on saved position and collapsed state
         const position = savedPosition.get();
         const isLeft = position.includes('left');
         if (isLeft) {
@@ -605,7 +671,10 @@ class EdgeControls extends SignalWatcher(LitElement) {
             this.style.right = isEdgeControlsCollapsed.get() ? '-100px' : '0';
             this.style.left = 'auto';
         }
+
+        // Control the display of the edge controls panel based on the hidden signal
         this.style.display = hiddenEdgeControls.get() ? 'none' : 'block';
+
         return html`
             <div id="html-injector-drag-handle" @mousedown=${this.handleDragStart} @touchstart=${this.handleDragStart}>
                 <div class="drag-dots">
@@ -622,46 +691,53 @@ class EdgeControls extends SignalWatcher(LitElement) {
                 <input type="checkbox" id="edge-injection-toggle" @change=${this.handleToggleChange} .checked=${isInjectionEnabled.get()}>
                 <span class="html-injector-slider"></span>
             </label>
-            <button id="html-injector-toggle-panel" class="html-injector-button menu_button" @click=${this.toggleSettingsPanel}>${isVisibleSettingsPanel.get() ? "显示面板" : "隐藏面板"}</button>
-            <button id="toggle-edge-controls" style=${styleMap(this.toggleEdgeButtonStyle)}
+            <button id="html-injector-toggle-panel" class="html-injector-button menu_button" @click=${this.toggleSettingsPanel}>${isVisibleSettingsPanel.get() ? "Show Panel" : "Hide Panel"}</button> <button id="toggle-edge-controls" style=${styleMap(this.toggleEdgeButtonStyle)}
             @click=${this.handleToggleEdgeControls}
             >
             ${isEdgeControlsCollapsed.get() ? '<<' : '>>'}
             </button>
 `
     }
+
+    // Handlers for dragging the edge controls panel
     handleDragStart(e: DragEvent | MouseEvent | TouchEvent) {
         this.isDragging = true;
+        // Get the starting Y position based on event type (mouse or touch)
         this.startY = e.type.includes('mouse') ? (e as MouseEvent).clientY : (e as unknown as TouchEvent).touches[0].clientY;
-        this.startTop = this.getBoundingClientRect().top;
-        e.preventDefault();
+        this.startTop = this.getBoundingClientRect().top; // Get the initial top position
+        e.preventDefault(); // Prevent default browser drag behavior
     }
+
     handleDragMove(event: DragEvent | MouseEvent | TouchEvent) {
         if (!this.isDragging) {
-            return;
+            return; // Do nothing if not dragging
         }
+        // Get the current Y position
         const clientY = event.type.includes('mouse') ? (event as MouseEvent).clientY : (event as unknown as TouchEvent).touches[0].clientY;
+        // Calculate the new top position, clamping it within the viewport
         let newTop = this.startTop + (clientY - this.startY);
         newTop = Math.max(0, Math.min(newTop, window.innerHeight - this.offsetHeight));
-        this.newTop = newTop;
-        this.style.top = `${newTop}px`;
-
+        this.newTop = newTop; // Store the new top position
+        this.style.top = `${newTop}px`; // Apply the new top position
     }
+
     handleDragEnd(event: DragEvent) {
-        this.isDragging = false;
+        this.isDragging = false; // End dragging
+        // If activation mode is custom, save the final top position
         if (activationMode.get() === 'custom') {
             saveTopPosition.set(this.newTop.toString());
         }
     }
 
 
-
+    // Handler for toggling the collapse state of the edge controls
     handleToggleEdgeControls(event: Event) {
-        isEdgeControlsCollapsed.set(!isEdgeControlsCollapsed.get());
+        isEdgeControlsCollapsed.set(!isEdgeControlsCollapsed.get()); // Toggle the collapsed state signal
         const value = isEdgeControlsCollapsed.get();
         const position = savedPosition.get();
         const isLeft = position.includes('left');
-        // 更新切换按钮文本和面板位置
+
+        // Update toggle button text and panel position (Translated from "更新切换按钮文本和面板位置")
         const toggleButton = event.target as HTMLElement;
         if (isLeft) {
             this.style.left = value ? '-100px' : '0';
@@ -672,7 +748,8 @@ class EdgeControls extends SignalWatcher(LitElement) {
             this.style.left = 'auto';
             toggleButton.textContent = value ? '<<' : '>>';
         }
-        // 更新按钮样式
+
+        // Update button style (Translated from "更新按钮样式")
         this.toggleEdgeButtonStyle = {
             ...this.toggleEdgeButtonStyle,
             ...(isLeft ? {
@@ -686,34 +763,42 @@ class EdgeControls extends SignalWatcher(LitElement) {
             })
         };
     }
+
+    // Handler for the injection toggle switch
     handleToggleChange(event: Event) {
         const target = event.target as HTMLInputElement;
         const isEnabled = target.checked;
         console.log('isEnabled', isEnabled);
-        isInjectionEnabled.set(isEnabled);
+        isInjectionEnabled.set(isEnabled); // Update the injection enabled signal
         if (isEnabled) {
-            injectHtmlCode();
+            injectHtmlCode(); // Inject HTML if enabled
         } else {
-            removeInjectedIframes();
+            removeInjectedIframes(); // Remove iframes if disabled
         }
-
     }
+
+    // Toggle the visibility of the settings panel by calling the method on the settingsPanel instance
     toggleSettingsPanel(event: Event) {
         this.settingsPanel.toggleSettingsPanel(event);
     }
+
+    // Update the position of the edge controls (redundant with updateEdgeControlsPosition, might need review)
     updatePosition() {
         this.updateEdgeControlsPosition(savedPosition.get());
     }
+
+    // Update the position and appearance of the edge controls panel
     updateEdgeControlsPosition(position: string) {
-        // 确定是左侧还是右侧
+        // Determine if the panel is on the left or right side (Translated from "确定是左侧还是右侧")
         const isLeft = position.includes('left');
-        // 更新面板的样式类
+        // Update the style class of the panel (Translated from "更新面板的样式类")
         if (isLeft) {
             this.classList.add('left-side');
         } else {
             this.classList.remove('left-side');
         }
-        // 设置垂直位置
+
+        // Set the vertical position (Translated from "设置垂直位置")
         switch (position) {
             case 'top-right':
             case 'top-left':
@@ -731,12 +816,13 @@ class EdgeControls extends SignalWatcher(LitElement) {
                 this.style.transform = 'translateY(-50%)';
                 break;
             case 'custom':
+                // Use saved top position for custom mode
                 this.style.top = saveTopPosition.get() ? `${saveTopPosition.get()}px` : "20vh";
                 this.style.transform = 'none';
                 break;
-
         }
-        // 设置水平位置
+
+        // Set the horizontal position (Translated from "设置水平位置")
         if (isLeft) {
             this.style.left = isEdgeControlsCollapsed.get() ? '-100px' : '0';
             this.style.right = 'auto';
@@ -744,7 +830,8 @@ class EdgeControls extends SignalWatcher(LitElement) {
             this.style.right = isEdgeControlsCollapsed.get() ? '-100px' : '0';
             this.style.left = 'auto';
         }
-        // 更新切换按钮的样式
+
+        // Update the style of the toggle button (Translated from "更新切换按钮的样式")
         this.toggleEdgeButtonStyle = {
             ...this.toggleEdgeButtonStyle,
             ...(isLeft ? {
@@ -757,36 +844,56 @@ class EdgeControls extends SignalWatcher(LitElement) {
                 borderRadius: '5px 0 0 5px'
             })
         };
-        this.requestUpdate(); // 请求更新以应用新的样式
+        this.requestUpdate(); // Request an update to apply the new styles (Translated from "请求更新以应用新的样式")
     }
 }
-
 
 customElements.define('settings-panel', SettingsPanel);
 customElements.define('edge-controls', EdgeControls);
+
+// Function to initialize the HTML Injector functionality
 export function initInjector() {
+    // Create instances of the custom elements
     const settingsPanel = document.createElement('settings-panel') as SettingsPanel;
     const edgeControls = document.createElement('edge-controls') as EdgeControls;
+
+    // Assign IDs to the elements
     settingsPanel.id = 'html-injector-settings';
     edgeControls.id = 'html-injector-edge-controls';
+
+    // Establish cross-references between the two components
     settingsPanel.edgeControls = edgeControls;
     edgeControls.settingsPanel = settingsPanel;
+
+    // Get the initial saved position
     const position = savedPosition.get();
+
+    // Add the 'left-side' class if the saved position includes 'left'
     if (position.includes('left')) {
         edgeControls.classList.add('left-side');
     }
+
+    // Append the elements to the document body
     document.body.appendChild(settingsPanel);
     document.body.appendChild(edgeControls);
-    // 确保初始位置和样式正确
+
+    // Ensure initial position and styles are correct (Translated from "确保初始位置和样式正确")
     edgeControls.updateEdgeControlsPosition(position);
+
+    // Add a resize listener to update the position on window resize
     window.addEventListener("resize", () => {
         edgeControls.updatePosition();
     })
+
+    // Add a listener for messages from iframes
     window.addEventListener('message', handleMessage);
+
+    // Add a listener for system theme changes to update iframes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateAllIframesTheme);
+
+    // Observe the document body for changes to trigger HTML injection
     observer.observe(document.body, {
-        childList: true,
-        subtree: true
+        childList: true, // Observe direct children
+        subtree: true // Observe all descendants
     })
 }
-
