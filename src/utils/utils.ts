@@ -1,4 +1,3 @@
-
 import { callGenericPopup, POPUP_TYPE } from "@silly-tavern/scripts/popup.js";
 import {
     saveSettingsDebounced,
@@ -19,7 +18,7 @@ export async function getSecrets() {
 
     if (response.status === 403) {
         callGenericPopup(
-            "<h3>禁止访问</h3><p>要在此处查看您的 API 密钥，请在 config.yaml 文件中将 allowKeysExposure 的值设置为 true，然后重新启动 SillyTavern 服务器。</p>",
+            "<h3>Access Forbidden</h3><p>To view your API key here, set the value of allowKeysExposure to true in the config.yaml file and restart the SillyTavern server.</p>",
             POPUP_TYPE.TEXT
         );
         return;
@@ -69,21 +68,21 @@ export async function switchSecretsFromArray() {
     if (!textarea) {
         return;
     }
-    currentKeyElement.textContent = `当前密钥: ${firstKeyApi}`;
-    lastKeyElement.textContent = `最后一个密钥: ${currentKey}`;
+    currentKeyElement.textContent = `Current Key: ${firstKeyApi}`;
+    lastKeyElement.textContent = `Last Key: ${currentKey}`;
 
     textarea.value = api_keys.join("\n");
 }
 
 
 export async function saveKey(key: string, value: string, isUpdateSecretDisplay = true) {
-    // 设置密钥
+    // Set the key
     await writeSecret(key, value);
-    // 更新密钥显示
+    // Update secret display
     if (isUpdateSecretDisplay) {
         updateSecretDisplay();
     }
     updateSecretDisplay();
-    // 保存设置
+    // Save settings
     saveSettingsDebounced();
 }
